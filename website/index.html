@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>ClockInOut Panel</title>
+  <meta charset="UTF-8">
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBE-dkBFP83O6PSgXvzOTyloh8FnQr9Tpc",
+  authDomain: "clockinout-6bb64.firebaseapp.com",
+  databaseURL: "https://clockinout-6bb64-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "clockinout-6bb64",
+  storageBucket: "clockinout-6bb64.appspot.com",
+  messagingSenderId: "632720191677",
+  appId: "1:632720191677:web:3e2ddf827465014c4907d4",
+  measurementId: "G-Q4X1C990KT"
+};
+  firebase.initializeApp(firebaseConfig);
+</script>
+<link href="style.css" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link href="https://cdn.datatables.net/1.10.20/css/dataTables.bootstrap4.min.css" rel="stylesheet" crossorigin="anonymous"/>
+<link href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="heading">
+        <h1>ClockInOut</h1>
+    </div>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+          <i class="fa fa-table mr-1"></i>
+          Attendence Summary 
+      </div>
+      <div class="card-body">
+        <button type="button" class="btn btn-primary" id="export">
+          <i class="fa fa-download" aria-hidden="true"></i>
+        </button>
+          <div class="table-responsive">
+              <table class="table table-bordered display responsive nowrap" id="buttonTable" width="100%" cellspacing="0" data-order="[]">
+                  <thead>
+                      <tr>
+                          <th>User ID</th>
+                          <th>Device Id</th>
+                          <th>Time</th>
+                          <th>Status</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+
+                  </tbody>
+              </table>
+          </div>
+      </div>
+  </div>
+  <div class="card mt-4">
+      <div class="card-header">
+          <i class="fa fa-table mr-1"></i>
+          LIVE STATUS
+      </div>
+      <div class="card-body users">
+        
+      </div>
+  </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap4.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/1.5.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.flash.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.2/js/buttons.print.min.js"></script>
+
+<script>
+  $(function(){
+    var button_table = $('#buttonTable').DataTable({
+      "ordering": false,
+      "paging": false,
+      buttons: [
+        {
+          extend: 'csv',
+          filename: 'attendance_file',
+          extension: '.csv'
+        }
+      ],
+      initComplete: function() {
+        $('.buttons-csv').hide();
+      }
+    });
+
+    document.getElementById("export").onclick = function() {
+      console.log("Exporting CSV");
+      button_table.button(0).trigger();
+    };
+
+    firebase.database().ref('/').on('value', function(snap) {
+      console.log("Firebase data received:", snap.val());
+
+      // Handle Live Status Update
+      if(snap.val().users){
+        let users = snap.val().users;
+        $('.users').html('');
+        Object.keys(users).forEach(key => {
+          $('.users').append(`
+            <div class="live">
+              <img src="./img/checkin.png" width="150px">
+              <ul>
+                <li><h3>UID: ${key}</h3></li>
+                <li><img id="true${key}" width="50px" src="./img/tick.png"></li>
+                <li><img id="false${key}" width="50px" src="./img/cross.png"></li>
+              </ul>
+            </div>
+          `);
+          if(users[key]==1){
+            $('#true'+key).show();
+            $('#false'+key).hide();
+          } else {
+            $('#true'+key).hide();
+            $('#false'+key).show();
+          }
+        });
+      }
+
+      // Handle Attendance Data
+      if (snap.val().attendance) {
+        let attendance = snap.val().attendance;
+        button_table.clear();
+
+        Object.keys(attendance).forEach(function(key) {
+          let elem = attendance[key];
+          var rowNode = button_table.row.add([
+            elem.uid || '',
+            elem.id || '',
+            elem.time || '',  // Directly using the time string from Firebase
+            elem.status ? '<span class="badge badge-success">Check In</span>' : '<span class="badge badge-danger">Check Out</span>'
+          ]).draw(false).node();
+
+          $(rowNode).find('td').eq(3).attr('id', 'state' + key); // Assign an ID to the status cell
+        });
+      } else {
+        console.log("No attendance data found.");
+      }
+    }, function(error) {
+      console.error("Firebase error: ", error);
+    });
+  });
+</script>
+</body>
+
+</html>
