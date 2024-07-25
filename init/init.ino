@@ -4,7 +4,7 @@
 #include "FirebaseESP8266.h"  // Install Firebase ESP8266 library
 
 #define FIREBASE_HOST "mqtt-b9578.firebaseio.com" //Without http:// or https:// schemes
-#define FIREBASE_AUTH "zeQcXZPtKdHZhKZe5DrX1oTgogiFZ1DW7sB2KWCj"
+#define FIREBASE_AUTH ""
 RFID rfid(D8, D0);       //D8:pin of tag reader SDA. D0:pin of tag reader RST 
 unsigned char str[MAX_LEN]; //MAX_LEN is 16: size of the array 
 
